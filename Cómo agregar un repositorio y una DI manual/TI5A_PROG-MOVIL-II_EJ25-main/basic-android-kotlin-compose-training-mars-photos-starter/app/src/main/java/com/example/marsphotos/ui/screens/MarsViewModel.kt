@@ -24,6 +24,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.marsphotos.network.MarsApi
 import kotlinx.coroutines.launch
 import java.io.IOException
+import com.example.marsphotos.data.NetworkMarsPhotosRepository
 
 sealed interface MarsUiState {
     data class Success(val photos: String) : MarsUiState
@@ -50,16 +51,15 @@ class MarsViewModel : ViewModel() {
     fun getMarsPhotos() {
         //marsUiState = "Set the Mars API status response here!"
         viewModelScope.launch {
-
              marsUiState = try {
-                val listResult = MarsApi.retrofitService.getPhotos()
-                 listResult.forEach {
-                     Log.d("id: ${it.id}", "${it.imgSrc}")
-                 }
+                 val marsPhotosRepository = NetworkMarsPhotosRepository()
+                 val listResult = marsPhotosRepository.getMarsPhotos()
                 MarsUiState.Success("Success: ${listResult.size} Mars photos retrieved")
             }catch (e: IOException){
                 MarsUiState.Error
-            }
+            }catch (e: HttpException){
+                 MarsUiState.Error
+             }
 
         }
 
