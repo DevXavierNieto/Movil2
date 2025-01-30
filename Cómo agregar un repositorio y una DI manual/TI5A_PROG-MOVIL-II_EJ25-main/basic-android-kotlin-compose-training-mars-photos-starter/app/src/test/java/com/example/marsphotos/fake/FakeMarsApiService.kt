@@ -13,21 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.example.marsphotos.network
+package com.example.marsphotos.fake
 
 import com.example.marsphotos.model.MarsPhoto
-import retrofit2.http.GET
+import com.example.marsphotos.network.MarsApiService
 
-/**
- * A public interface that exposes the [getPhotos] method
- */
-interface MarsApiService {
-    /**
-     * Returns a [List] of [MarsPhoto] and this method can be called from a Coroutine.
-     * The @GET annotation indicates that the "photos" endpoint will be requested with the GET
-     * HTTP method
-     */
-    @GET("photos")
-    suspend fun getPhotos(): List<MarsPhoto>
+class FakeMarsApiService : MarsApiService {
+    override suspend fun getPhotos(): List<MarsPhoto> {
+        return FakeDataSource.photosList
+    }
 }

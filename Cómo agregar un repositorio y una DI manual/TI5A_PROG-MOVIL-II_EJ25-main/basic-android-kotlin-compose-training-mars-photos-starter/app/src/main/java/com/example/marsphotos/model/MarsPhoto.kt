@@ -14,20 +14,17 @@
  * limitations under the License.
  */
 
-package com.example.marsphotos.network
+package com.example.marsphotos.model
 
-import com.example.marsphotos.model.MarsPhoto
-import retrofit2.http.GET
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 /**
- * A public interface that exposes the [getPhotos] method
+ * This data class defines a Mars photo which includes an ID, and the image URL.
  */
-interface MarsApiService {
-    /**
-     * Returns a [List] of [MarsPhoto] and this method can be called from a Coroutine.
-     * The @GET annotation indicates that the "photos" endpoint will be requested with the GET
-     * HTTP method
-     */
-    @GET("photos")
-    suspend fun getPhotos(): List<MarsPhoto>
-}
+@Serializable
+data class MarsPhoto(
+    val id: String,
+    @SerialName(value = "img_src")
+    val imgSrc: String
+)
