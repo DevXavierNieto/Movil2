@@ -24,7 +24,7 @@ import okhttp3.MediaType.Companion.toMediaType
 /**
  * Dependency Injection container at the application level.
  */
-interface AppContainer {
+/*interface AppContainer {
     val marsPhotosRepository: MarsPhotosRepository
 }
 
@@ -58,3 +58,4 @@ class DefaultAppContainer : AppContainer {
         NetworkMarsPhotosRepository(retrofitService)
     }
 }
+*/
