@@ -8,20 +8,33 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.proyecto_divisa.ui.theme.Proyecto_DivisaTheme
+import com.example.proyecto_divisa.worker.scheduleExchangeRateWork
+import kotlinx.coroutines.flow.collectLatest
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
         setContent {
             Proyecto_DivisaTheme {
+                var exchangeRates by remember { mutableStateOf<String?>(null) }
+
+                // Programa el Worker para que se ejecute
+                LaunchedEffect(Unit) {
+                    scheduleExchangeRateWork(this@MainActivity).collectLatest { rates ->
+                        exchangeRates = rates
+                    }
+                }
+
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Greeting(
-                        name = "Android",
+                        name = "Divisas",
+                        exchangeRates = exchangeRates,
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
@@ -31,9 +44,9 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
+fun Greeting(name: String, exchangeRates: String?, modifier: Modifier = Modifier) {
     Text(
-        text = "Hello $name!",
+        text = "Bienvenido a la app de $name!\n\nTasas de cambio:\n$exchangeRates",
         modifier = modifier
     )
 }
@@ -42,6 +55,6 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 @Composable
 fun GreetingPreview() {
     Proyecto_DivisaTheme {
-        Greeting("Android")
+        Greeting("Divisas", null)
     }
 }
