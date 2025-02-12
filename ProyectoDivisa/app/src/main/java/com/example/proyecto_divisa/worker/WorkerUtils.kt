@@ -16,7 +16,7 @@ fun scheduleExchangeRateWork(context: Context): Flow<Pair<String?, String?>> {
         val workManager = WorkManager.getInstance(context)
         val sharedPreferences = context.getSharedPreferences("ExchangeRatePrefs", Context.MODE_PRIVATE)
 
-        // 🕒 Calcula la próxima hora exacta + 1 minuto
+        //Calcula la próxima hora exacta + 1 minuto
         val now = Calendar.getInstance()
         val nextUpdateTime = Calendar.getInstance().apply {
             add(Calendar.HOUR_OF_DAY, 1) // Siguiente hora
@@ -26,10 +26,10 @@ fun scheduleExchangeRateWork(context: Context): Flow<Pair<String?, String?>> {
         }
         val delay = nextUpdateTime.timeInMillis - now.timeInMillis
 
-        // 🔹 Guarda la próxima actualización en SharedPreferences
+        //Guarda la próxima actualización en SharedPreferences
         sharedPreferences.edit().putLong("next_update", nextUpdateTime.timeInMillis).apply()
 
-        // 🔹 Worker inmediato (al iniciar la app)
+        //Worker inmediato (al iniciar la app)
         val immediateWorkRequest = OneTimeWorkRequest.Builder(ExchangeRateWorker::class.java)
             .setConstraints(
                 Constraints.Builder()
@@ -39,7 +39,7 @@ fun scheduleExchangeRateWork(context: Context): Flow<Pair<String?, String?>> {
             .build()
         workManager.enqueue(immediateWorkRequest)
 
-        // 🔹 Worker para sincronizar con la hora exacta + 1 minuto
+        //Worker para sincronizar con la hora exacta + 1 minuto
         val initialWorkRequest = OneTimeWorkRequest.Builder(ExchangeRateWorker::class.java)
             .setInitialDelay(delay, TimeUnit.MILLISECONDS)
             .setConstraints(
@@ -50,7 +50,7 @@ fun scheduleExchangeRateWork(context: Context): Flow<Pair<String?, String?>> {
             .build()
         workManager.enqueue(initialWorkRequest)
 
-        // 🔹 Worker periódico cada hora en punto + 1 minuto
+        //Worker periódico cada hora en punto + 1 minuto
         val periodicWorkRequest = PeriodicWorkRequest.Builder(ExchangeRateWorker::class.java, 1, TimeUnit.HOURS)
             .setInitialDelay(delay, TimeUnit.MILLISECONDS)
             .setConstraints(
@@ -66,12 +66,12 @@ fun scheduleExchangeRateWork(context: Context): Flow<Pair<String?, String?>> {
             periodicWorkRequest
         )
 
-        // 🔹 Observar el resultado del Worker
+        //Observar el resultado del Worker
         val observer = androidx.lifecycle.Observer<WorkInfo?> { workInfo ->
             if (workInfo != null && workInfo.state == WorkInfo.State.SUCCEEDED) {
                 val exchangeRates = workInfo.outputData.getString("exchange_rates")
 
-                // 🔹 Guarda la última ejecución en SharedPreferences
+                //Guarda la última ejecución en SharedPreferences
                 val lastUpdateTime = System.currentTimeMillis()
                 sharedPreferences.edit().putLong("last_update", lastUpdateTime).apply()
 
@@ -87,7 +87,7 @@ fun scheduleExchangeRateWork(context: Context): Flow<Pair<String?, String?>> {
     }
 }
 
-// 🔹 Formatear la fecha
+//Formatear la fecha
 private fun formatTime(timeInMillis: Long): String {
     val sdf = SimpleDateFormat("HH:mm:ss dd/MM/yyyy", Locale.getDefault())
     return sdf.format(timeInMillis)

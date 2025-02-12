@@ -28,7 +28,7 @@ class MainActivity : ComponentActivity() {
                 var lastUpdate by remember { mutableStateOf<String?>(null) }
                 var nextUpdate by remember { mutableStateOf<String?>(null) }
 
-                // 🔹 Cargar la próxima actualización antes de ejecutar el worker
+                //Cargar la próxima actualización antes de ejecutar el worker
                 val sharedPreferences = getSharedPreferences("ExchangeRatePrefs", Context.MODE_PRIVATE)
                 LaunchedEffect(Unit) {
                     val nextUpdateMillis = sharedPreferences.getLong("next_update", 0)
@@ -36,12 +36,12 @@ class MainActivity : ComponentActivity() {
                         nextUpdate = formatTime(nextUpdateMillis)
                     }
 
-                    // 🔹 Ejecutar el worker
+                    //Ejecutar el worker
                     scheduleExchangeRateWork(this@MainActivity).collectLatest { (rates, lastUpdateTime) ->
                         exchangeRates = rates
                         lastUpdate = lastUpdateTime
 
-                        // 🔹 Actualizar próxima ejecución al recibir datos
+                        //Actualizar próxima ejecución al recibir datos
                         val updatedNextUpdateMillis = sharedPreferences.getLong("next_update", 0)
                         if (updatedNextUpdateMillis > 0) {
                             nextUpdate = formatTime(updatedNextUpdateMillis)
@@ -68,7 +68,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// 🔹 Composable actualizado con los nuevos mensajes
+//Composable actualizado con los nuevos mensajes
 @Composable
 fun Greeting(name: String, exchangeRates: String?, lastUpdate: String?, nextUpdate: String?, modifier: Modifier = Modifier) {
     Column(modifier = modifier.padding(16.dp)) {
@@ -81,7 +81,7 @@ fun Greeting(name: String, exchangeRates: String?, lastUpdate: String?, nextUpda
     }
 }
 
-// 🔹 Formatear la fecha en MainActivity
+//Formatear la fecha en MainActivity
 fun formatTime(timeInMillis: Long): String {
     val sdf = SimpleDateFormat("HH:mm:ss dd/MM/yyyy", Locale.getDefault())
     return sdf.format(timeInMillis)
