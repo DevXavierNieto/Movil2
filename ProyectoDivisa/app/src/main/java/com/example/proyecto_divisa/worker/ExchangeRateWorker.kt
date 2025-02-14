@@ -1,9 +1,7 @@
 package com.example.proyecto_divisa.worker
 
 import android.content.Context
-import androidx.work.CoroutineWorker
-import androidx.work.Data
-import androidx.work.WorkerParameters
+import androidx.work.*
 import com.example.proyecto_divisa.data.ExchangeRatesResponse
 import com.example.proyecto_divisa.network.RetrofitClient
 import kotlinx.coroutines.Dispatchers
@@ -27,9 +25,18 @@ class ExchangeRateWorker(
                 if (response.isSuccessful) {
                     val exchangeRates = response.body()
                     if (exchangeRates != null) {
-                        // Devuelve los datos como resultado
+                        // Guardar la tasa de cambio inicial en SharedPreferences
+                        val sharedPreferences = applicationContext.getSharedPreferences("ExchangeRatePrefs", Context.MODE_PRIVATE)
+                        val initialRate = exchangeRates.conversion_rates["USD"]?.toString() // Guardamos la tasa USD/MXN
+                        sharedPreferences.edit().putString("initial_rate", initialRate).apply()
+
+                        // Pasar las tasas de cambio actuales en el formato necesario
+                        val exchangeRatesString = exchangeRates.conversion_rates.entries.joinToString("\n") {
+                            "${it.key}: ${it.value} ${baseCurrency}"
+                        }
+
                         val outputData = Data.Builder()
-                            .putString("exchange_rates", exchangeRates.toString())
+                            .putString("exchange_rates", exchangeRatesString)
                             .build()
                         Result.success(outputData)
                     } else {
