@@ -1,7 +1,7 @@
 package com.example.proyecto_divisa
 
-import android.os.Bundle
 import android.content.Context
+import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -11,9 +11,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.proyecto_divisa.data.AppDatabase
+import com.example.proyecto_divisa.data.ExchangeRate
 import com.example.proyecto_divisa.ui.theme.Proyecto_DivisaTheme
 import com.example.proyecto_divisa.worker.scheduleExchangeRateWork
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -28,20 +31,25 @@ class MainActivity : ComponentActivity() {
                 var lastUpdate by remember { mutableStateOf<String?>(null) }
                 var nextUpdate by remember { mutableStateOf<String?>(null) }
 
-                //Cargar la próxima actualización antes de ejecutar el worker
-                val sharedPreferences = getSharedPreferences("ExchangeRatePrefs", Context.MODE_PRIVATE)
+                // Obtener la base de datos y DAO
+                val database = AppDatabase.getDatabase(this@MainActivity)
+                val dao = database.exchangeRateDao()
+
                 LaunchedEffect(Unit) {
-                    val nextUpdateMillis = sharedPreferences.getLong("next_update", 0)
-                    if (nextUpdateMillis > 0) {
-                        nextUpdate = formatTime(nextUpdateMillis)
+                    // Obtener la última tasa de cambio de la base de datos
+                    val lastExchangeRate = dao.getLastExchangeRate()
+                    if (lastExchangeRate != null) {
+                        exchangeRates = lastExchangeRate.conversionRatesJson
+                        lastUpdate = formatTime(lastExchangeRate.lastUpdate)
                     }
 
-                    //Ejecutar el worker
+                    // Ejecutar el worker y sincronizar
                     scheduleExchangeRateWork(this@MainActivity).collectLatest { (rates, lastUpdateTime) ->
                         exchangeRates = rates
                         lastUpdate = lastUpdateTime
 
-                        //Actualizar próxima ejecución al recibir datos
+                        // Si necesitas actualizar la próxima actualización (puedes usar Room también)
+                        val sharedPreferences = getSharedPreferences("ExchangeRatePrefs", Context.MODE_PRIVATE)
                         val updatedNextUpdateMillis = sharedPreferences.getLong("next_update", 0)
                         if (updatedNextUpdateMillis > 0) {
                             nextUpdate = formatTime(updatedNextUpdateMillis)
@@ -68,7 +76,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-//Composable actualizado con los nuevos mensajes
+// Composable actualizado con los nuevos mensajes
 @Composable
 fun Greeting(name: String, exchangeRates: String?, lastUpdate: String?, nextUpdate: String?, modifier: Modifier = Modifier) {
     Column(modifier = modifier.padding(16.dp)) {
@@ -81,7 +89,7 @@ fun Greeting(name: String, exchangeRates: String?, lastUpdate: String?, nextUpda
     }
 }
 
-//Formatear la fecha en MainActivity
+// Función para formatear la fecha en MainActivity
 fun formatTime(timeInMillis: Long): String {
     val sdf = SimpleDateFormat("HH:mm:ss dd/MM/yyyy", Locale.getDefault())
     return sdf.format(timeInMillis)
