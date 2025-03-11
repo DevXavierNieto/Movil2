@@ -18,4 +18,12 @@ interface ExchangeRateDao {
     // Consulta para obtener tasas de cambio en un rango de fechas
     @Query("SELECT * FROM exchange_rate WHERE lastUpdate BETWEEN :startDate AND :endDate ORDER BY lastUpdate ASC")
     suspend fun getExchangeRatesInRange(startDate: Long, endDate: Long): List<ExchangeRate>
+
+    @Query("SELECT * FROM exchange_rate ORDER BY lastUpdate ASC")
+    suspend fun getAllExchangeRates(): List<ExchangeRate>
+
+    @Query("SELECT * FROM exchange_rate WHERE lastUpdate = :timestamp LIMIT 1")
+    suspend fun getExchangeRateByTimestamp(timestamp: Long): ExchangeRate?
+
+
 }

@@ -5,6 +5,14 @@
     <!-- Permiso de Internet -->
     <uses-permission android:name="android.permission.INTERNET"/>
 
+    <permission
+        android:name="com.example.proyecto_divisa.provider.READ"
+        android:protectionLevel="normal"/>
+
+    <uses-permission android:name="com.example.proyecto_divisa.provider.READ"/>
+
+
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -21,7 +29,9 @@
             android:name=".data.ExchangeRateProvider"
             android:authorities="com.example.proyecto_divisa.provider"
             android:exported="true"
-            android:grantUriPermissions="true"/>
+            android:grantUriPermissions="true"
+            android:readPermission="com.example.proyecto_divisa.provider.READ"/>
+
 
         <activity
             android:name=".MainActivity"
