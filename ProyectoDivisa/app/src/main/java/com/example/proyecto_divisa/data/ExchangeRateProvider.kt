@@ -5,6 +5,7 @@ import android.content.ContentValues
 import android.database.Cursor
 import android.database.MatrixCursor
 import android.net.Uri
+import android.util.Log
 import kotlinx.coroutines.runBlocking
 
 class ExchangeRateProvider : ContentProvider() {
@@ -32,11 +33,14 @@ class ExchangeRateProvider : ContentProvider() {
             val startDate = selectionArgs?.getOrNull(0)?.toLongOrNull()
             val endDate = selectionArgs?.getOrNull(1)?.toLongOrNull()
 
-            if (startDate != null && endDate != null) {
+            val result = if (startDate != null && endDate != null) {
                 dao.getExchangeRatesInRange(startDate, endDate)
             } else {
-                listOfNotNull(dao.getLastExchangeRate())
+                dao.getAllExchangeRates()
             }
+
+            Log.d("ExchangeRateProvider", "Datos obtenidos desde BD: $result")
+            result
         }
 
         val cursor = MatrixCursor(arrayOf("id", "conversionRatesJson", "lastUpdate"))
@@ -45,6 +49,7 @@ class ExchangeRateProvider : ContentProvider() {
         }
         return cursor
     }
+
 
     override fun insert(uri: Uri, values: ContentValues?): Uri? {
         throw UnsupportedOperationException("Insert operation is not supported")
