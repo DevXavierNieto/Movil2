@@ -4,6 +4,8 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.location.Geocoder
 import android.location.Location
 import android.os.Bundle
@@ -21,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.res.ResourcesCompat
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -42,10 +45,11 @@ class MainActivity : ComponentActivity(), OnMapReadyCallback {
     private lateinit var mMap: GoogleMap
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var homeAddress by mutableStateOf<LatLng?>(null)
-    private var currentLocation by mutableStateOf<LatLng?>(null)
     private var homeAddressText by mutableStateOf("")
     private var showDialog by mutableStateOf(false)
     private var routePolyline: Polyline? = null
+    private var currentLocationMarker: Marker? = null
+    private var homeMarker: Marker? = null
 
     // Configuración para la API de Directions
     private val geoApiContext by lazy {
@@ -66,7 +70,7 @@ class MainActivity : ComponentActivity(), OnMapReadyCallback {
                 getCurrentLocation()
             }
             else -> {
-                // Permiso denegado
+                Toast.makeText(this, "Se necesitan permisos de ubicación", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -74,6 +78,7 @@ class MainActivity : ComponentActivity(), OnMapReadyCallback {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Configurar dirección inicial
         homeAddressText = "Universidad 78, La Joyita, 38983 Uriangato, Gto."
         homeAddress = LatLng(20.118726824911494, -101.1707240721873)
 
@@ -114,21 +119,13 @@ class MainActivity : ComponentActivity(), OnMapReadyCallback {
                     ControlsSection(
                         context = context,
                         homeAddress = homeAddressText,
-                        currentLocation = currentLocation,
                         homeLatLng = homeAddress,
                         onAddressChange = { homeAddressText = it },
                         onSetHomeAddress = {
                             setHomeAddressFromText(context, homeAddressText)
                             showDialog = false
                         },
-                        onShowDialog = { showDialog = true },
-                        onRecalculateRoute = {
-                            currentLocation?.let { current ->
-                                homeAddress?.let { home ->
-                                    calculateRoute(current, home)
-                                }
-                            }
-                        }
+                        onShowDialog = { showDialog = true }
                     )
 
                     // Dialogo para configurar dirección
@@ -160,12 +157,10 @@ class MainActivity : ComponentActivity(), OnMapReadyCallback {
     fun ControlsSection(
         context: Context,
         homeAddress: String,
-        currentLocation: LatLng?,
         homeLatLng: LatLng?,
         onAddressChange: (String) -> Unit,
         onSetHomeAddress: () -> Unit,
-        onShowDialog: () -> Unit,
-        onRecalculateRoute: () -> Unit
+        onShowDialog: () -> Unit
     ) {
         Column(
             modifier = Modifier
@@ -195,16 +190,21 @@ class MainActivity : ComponentActivity(), OnMapReadyCallback {
             // Botón para recalcular ruta
             Button(
                 onClick = {
-                    if (currentLocation != null && homeLatLng != null) {
-                        onRecalculateRoute()
+                    if (homeLatLng != null) {
+                        // Obtener ubicación actual antes de recalcular
+                        getCurrentLocation { current ->
+                            calculateRoute(current, homeLatLng)
+                        }
                     } else {
-                        Toast.makeText(context,
-                            if (currentLocation == null) "Obteniendo ubicación..." else "Configura una dirección primero",
-                            Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            context,
+                            "Configura una dirección primero",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = currentLocation != null && homeLatLng != null
+                enabled = homeLatLng != null
             ) {
                 Text("Recalcular Ruta")
             }
@@ -263,26 +263,46 @@ class MainActivity : ComponentActivity(), OnMapReadyCallback {
                     updateMapWithHomeAddress(latLng)
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                Toast.makeText(
+                    this,
+                    "Error al convertir la dirección: ${e.message}",
+                    Toast.LENGTH_LONG
+                ).show()
             }
         }
     }
 
     private fun updateMapWithHomeAddress(latLng: LatLng) {
-        val title = if (latLng.latitude == 20.118726824911494 &&
-            latLng.longitude == -101.1707240721873) {
-            "Universidad 78"
-        } else {
-            "Dirección configurada"
-        }
+        // Crear icono personalizado para la casa
+        val homeBitmap = getBitmapFromVector(R.drawable.ic_home) // Asegúrate de tener este drawable
+        val homeIcon = homeBitmap?.let { BitmapDescriptorFactory.fromBitmap(it) }
 
-        mMap.clear() // Limpiar marcadores anteriores
-        mMap.addMarker(MarkerOptions().position(latLng).title(title))
+        homeMarker?.remove() // Eliminar marcador anterior si existe
+        homeMarker = mMap.addMarker(
+            MarkerOptions()
+                .position(latLng)
+                .title(if (latLng == LatLng(20.118726824911494, -101.1707240721873)) "Universidad 78" else "Mi destino")
+                .icon(homeIcon)
+        )
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
 
-        currentLocation?.let {
-            calculateRoute(it, latLng)
+        // Calcular ruta desde la ubicación actual
+        getCurrentLocation { current ->
+            calculateRoute(current, latLng)
         }
+    }
+
+    private fun getBitmapFromVector(vectorResId: Int): Bitmap? {
+        val vectorDrawable = ResourcesCompat.getDrawable(resources, vectorResId, null) ?: return null
+        val bitmap = Bitmap.createBitmap(
+            vectorDrawable.intrinsicWidth,
+            vectorDrawable.intrinsicHeight,
+            Bitmap.Config.ARGB_8888
+        )
+        val canvas = Canvas(bitmap)
+        vectorDrawable.setBounds(0, 0, canvas.width, canvas.height)
+        vectorDrawable.draw(canvas)
+        return bitmap
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
@@ -290,10 +310,9 @@ class MainActivity : ComponentActivity(), OnMapReadyCallback {
         mMap.uiSettings.isZoomControlsEnabled = true
         mMap.uiSettings.isMyLocationButtonEnabled = true
 
-        // Mostrar dirección inicial aunque no tengamos ubicación aún
+        // Mostrar dirección inicial
         homeAddress?.let {
-            mMap.addMarker(MarkerOptions().position(it).title("Universidad 78"))
-            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(it, 15f))
+            updateMapWithHomeAddress(it)
         }
 
         if (ContextCompat.checkSelfPermission(
@@ -307,7 +326,7 @@ class MainActivity : ComponentActivity(), OnMapReadyCallback {
     }
 
     @SuppressLint("MissingPermission")
-    private fun getCurrentLocation() {
+    private fun getCurrentLocation(onSuccess: ((LatLng) -> Unit)? = null) {
         if (ContextCompat.checkSelfPermission(
                 this,
                 Manifest.permission.ACCESS_FINE_LOCATION
@@ -316,22 +335,31 @@ class MainActivity : ComponentActivity(), OnMapReadyCallback {
             fusedLocationClient.lastLocation
                 .addOnSuccessListener { location: Location? ->
                     location?.let {
-                        currentLocation = LatLng(it.latitude, it.longitude)
-                        centerMapOnLocation(currentLocation!!)
-
-                        homeAddress?.let { home ->
-                            calculateRoute(currentLocation!!, home)
-                        }
+                        val currentLatLng = LatLng(it.latitude, it.longitude)
+                        updateCurrentLocationMarker(currentLatLng)
+                        onSuccess?.invoke(currentLatLng)
+                    } ?: run {
+                        Toast.makeText(
+                            this,
+                            "No se pudo obtener la ubicación actual",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 }
         }
     }
 
-    private fun centerMapOnLocation(location: LatLng) {
-        mMap.addMarker(
+    private fun updateCurrentLocationMarker(location: LatLng) {
+        // Crear icono personalizado para la ubicación actual
+        val locationBitmap = getBitmapFromVector(R.drawable.ic_my_location) // Asegúrate de tener este drawable
+        val locationIcon = locationBitmap?.let { BitmapDescriptorFactory.fromBitmap(it) }
+
+        currentLocationMarker?.remove() // Eliminar marcador anterior
+        currentLocationMarker = mMap.addMarker(
             MarkerOptions()
                 .position(location)
                 .title("Mi ubicación")
+                .icon(locationIcon)
         )
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 15f))
     }
@@ -371,7 +399,7 @@ class MainActivity : ComponentActivity(), OnMapReadyCallback {
             destination.longitude == -101.1707240721873) {
             "Universidad 78"
         } else {
-            "Dirección configurada"
+            "Mi destino"
         }
 
         Toast.makeText(this, "Calculando ruta a $destinationName...", Toast.LENGTH_SHORT).show()
@@ -381,7 +409,7 @@ class MainActivity : ComponentActivity(), OnMapReadyCallback {
                 val directionsResult = DirectionsApi.newRequest(geoApiContext)
                     .mode(TravelMode.DRIVING)
                     .origin(com.google.maps.model.LatLng(origin.latitude, origin.longitude))
-                    .destination(com.google.maps.model.LatLng(destination.latitude, destination.longitude)) // ✅ Usa el destino actual
+                    .destination(com.google.maps.model.LatLng(destination.latitude, destination.longitude))
                     .await()
 
                 runOnUiThread {
