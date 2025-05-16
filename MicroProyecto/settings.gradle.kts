@@ -33,3 +33,4 @@ dependencyResolutionManagement {
 
 include(":composeApp")
 include(":androidapp")
+include(":composeApp:wasmjsmain")

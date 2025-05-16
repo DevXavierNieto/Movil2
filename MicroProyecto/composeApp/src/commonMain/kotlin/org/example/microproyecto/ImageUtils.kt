@@ -1,6 +1,6 @@
+// commonMain/kotlin/org/example/microproyecto/ImageUtils.kt
 package org.example.microproyecto
 
-import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.ImageBitmap
 
-@Composable
-expect fun PlatformImage(url: String, altText: String = "")
+expect suspend fun loadImageBitmapFromUrl(url: String): ImageBitmap?

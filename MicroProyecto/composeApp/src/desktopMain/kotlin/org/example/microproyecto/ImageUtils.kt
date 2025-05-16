@@ -1,26 +1,20 @@
+// desktopMain/kotlin/org/example/microproyecto/ImageUtils.kt
 package org.example.microproyecto
 
-import androidx.compose.foundation.Image
-import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.painter.BitmapPainter
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toComposeImageBitmap
+import io.ktor.client.*
+import io.ktor.client.engine.cio.*
+import io.ktor.client.request.*
+import io.ktor.client.call.*
+import org.jetbrains.skia.Image
 
-@Composable
-actual fun PlatformImage(url: String, altText: String) {
-    var bitmap by remember { mutableStateOf<ImageBitmap?>(null) }
-    val scope = rememberCoroutineScope()
-
-    LaunchedEffect(url) {
-        bitmap = loadImageBitmapFromUrl(url)
-    }
-
-    bitmap?.let {
-        Image(
-            painter = BitmapPainter(it),
-            contentDescription = altText,
-            contentScale = ContentScale.Crop
-        )
+actual suspend fun loadImageBitmapFromUrl(url: String): ImageBitmap? {
+    return try {
+        val client = HttpClient(CIO)
+        val bytes: ByteArray = client.get(url).body()
+        Image.makeFromEncoded(bytes).toComposeImageBitmap()
+    } catch (e: Exception) {
+        null
     }
 }
