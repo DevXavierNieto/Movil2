@@ -12,7 +12,7 @@ pluginManagement {
         }
         mavenCentral()
         gradlePluginPortal()
-        maven("https://maven.pkg.jetbrains.space/public/p/compose/dev") // ✅ REPO DE COMPOSE/SKIKO
+        maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
     }
 }
 
@@ -27,7 +27,7 @@ dependencyResolutionManagement {
         }
         mavenCentral()
         maven("https://s01.oss.sonatype.org/content/repositories/releases/")
-        maven("https://maven.pkg.jetbrains.space/public/p/compose/dev") // ✅ REPO DE SKIKO/COMPOSE
+        maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
     }
 }
 

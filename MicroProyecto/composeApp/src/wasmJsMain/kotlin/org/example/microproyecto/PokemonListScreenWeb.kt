@@ -4,18 +4,10 @@ import androidx.compose.runtime.*
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.*
-import org.jetbrains.compose.web.renderComposable
 
 @Composable
 fun PokemonListScreenWeb() {
-    val scope = rememberCoroutineScope()
-    var pokemonList by remember { mutableStateOf<List<PokemonEntry>>(emptyList()) }
-
-    LaunchedEffect(Unit) {
-        scope.launch {
-            pokemonList = PokemonApi.getPokemonList()
-        }
-    }
+    val pokemonList = rememberPokemonList()
 
     Style(PokemonStyles)
 
@@ -24,16 +16,17 @@ fun PokemonListScreenWeb() {
     }) {
         pokemonList.forEach { pokemon ->
             val id = pokemon.url.trimEnd('/').split("/").last()
+            val name = pokemon.name.replaceFirstChar { it.uppercase() }
+            val imageUrl = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/$id.png"
+
             Div({
                 classes(PokemonStyles.card)
             }) {
-                Img(src = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/$id.png",
-                    alt = pokemon.name,
-                    attrs = {
-                        classes(PokemonStyles.image)
-                    })
+                Img(src = imageUrl, alt = name, attrs = {
+                    classes(PokemonStyles.image)
+                })
                 P {
-                    Text(pokemon.name.replaceFirstChar { it.uppercase() })
+                    Text(name)
                 }
             }
         }

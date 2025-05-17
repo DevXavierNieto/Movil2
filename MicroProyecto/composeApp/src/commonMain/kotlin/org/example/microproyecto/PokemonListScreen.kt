@@ -15,11 +15,7 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun PokemonListScreen() {
-    var pokemonList by remember { mutableStateOf<List<PokemonEntry>>(emptyList()) }
-
-    LaunchedEffect(Unit) {
-        pokemonList = PokemonApi.getPokemonList()
-    }
+    val pokemonList = rememberPokemonList()
 
     LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         items(pokemonList) { pokemon ->

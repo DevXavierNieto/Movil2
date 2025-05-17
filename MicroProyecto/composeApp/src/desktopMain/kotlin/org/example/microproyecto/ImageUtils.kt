@@ -1,4 +1,3 @@
-// desktopMain/kotlin/org/example/microproyecto/ImageUtils.kt
 package org.example.microproyecto
 
 import androidx.compose.ui.graphics.ImageBitmap
