@@ -9,8 +9,8 @@ object PokemonStyles : StyleSheet() {
         property("margin", "0 auto")
         padding(16.px)
 
-        height(100.vh)                     // 💡 Limita a altura de pantalla
-        property("overflow-y", "auto")     // ✅ Habilita scroll vertical
+        height(100.vh)
+        property("overflow-y", "auto")
     }
 
 

@@ -74,7 +74,7 @@ kotlin {
 
         val wasmJsMain by getting {
             dependencies {
-                implementation("io.ktor:ktor-client-js:2.3.0") // versión que uses
+                implementation("io.ktor:ktor-client-js:2.3.0")
                 implementation("org.jetbrains.compose.web:web-core:1.6.10")
             }
         }
